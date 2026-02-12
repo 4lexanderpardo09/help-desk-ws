@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { NotificationsModule } from './notifications/notifications.module';
+import { HealthController } from './health/health.controller';
 
 /**
  * Módulo raíz de la aplicación WebSocket.
@@ -16,5 +17,6 @@ import { NotificationsModule } from './notifications/notifications.module';
         // Módulo de notificaciones WebSocket
         NotificationsModule,
     ],
+    controllers: [HealthController],
 })
 export class AppModule { }
