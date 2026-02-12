@@ -1,13 +1,16 @@
-# Build stage
+# Stage 1: Builder
 FROM node:20-alpine AS builder
 
-WORKDIR /app
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+WORKDIR /usr/src/app
 
-# Install pnpm and dependencies
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# Copy package.json and pnpm-lock.yaml
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -15,19 +18,20 @@ COPY . .
 # Build the application
 RUN pnpm run build
 
+# Stage 2: Production
+FROM node:20-alpine AS production
+
+WORKDIR /usr/src/app
+
 # Production stage
 FROM node:20-alpine
 
-WORKDIR /app
+# Import public key for pnpm if needed, but for simple run we might just rely on node
+# However, we need to ensure the runtime has what it needs.
+# Copying node_modules from builder is good.
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-
-# Install pnpm and production dependencies only
-RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
-
-# Copy built application from builder
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/dist ./dist
 
 # Expose WebSocket port
 EXPOSE 3001
